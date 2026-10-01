@@ -5,6 +5,8 @@ NASA Space Apps Challenge 2026 · *Be an Earth System Trend Detective!*
 
 > Antes de creerle a una tendencia, pregúntale de dónde vienen los datos.
 
+**Demo en vivo:** https://cswni.github.io/senal-o-ruido/
+
 ## El problema
 
 El reto pide determinar **qué** cambia, **dónde**, **cuánto** y si es **significativo**.
