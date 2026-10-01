@@ -29,6 +29,8 @@ test('buildPowerUrl builds a daily point request', () => {
   assert.equal(url.searchParams.get('start'), '19810101');
   assert.equal(url.searchParams.get('end'), '20260920');
   assert.ok(url.searchParams.get('parameters').includes('GWETROOT'));
+  assert.ok(url.searchParams.get('parameters').includes('QV2M'));
+  assert.ok(url.searchParams.get('parameters').includes('PS'));
 });
 
 test('buildPowerUrl rejects coordinates out of range', () => {

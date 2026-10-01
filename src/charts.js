@@ -18,14 +18,22 @@ function el(tag, attrs = {}, text) {
 
 const scale = (d0, d1, r0, r1) => (v) => (d1 === d0 ? (r0 + r1) / 2 : r0 + ((v - d0) / (d1 - d0)) * (r1 - r0));
 
-function niceTicks(min, max, count = 4) {
+export function niceTicks(min, max, count = 4) {
   const span = max - min || Math.abs(max) || 1;
   const raw = span / count;
   const pow = 10 ** Math.floor(Math.log10(raw));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * pow).find((s) => span / s <= count) ?? 10 * pow;
-  const ticks = [];
-  for (let t = Math.floor(min / step) * step; t <= max + step * 1e-9; t += step) ticks.push(Number(t.toFixed(10)));
-  return ticks;
+  // Extend to the first tick at or above max so marks never overflow the plot.
+  const first = Math.floor(min / step + 1e-9) * step;
+  const last = Math.ceil(max / step - 1e-9) * step;
+  const steps = Math.max(1, Math.round((last - first) / step));
+  return Array.from({ length: steps + 1 }, (_, k) => Number((first + k * step).toFixed(10)));
+}
+
+/** Fewest decimals (max 2) that print every tick step exactly, e.g. 2,5 or 0,25. */
+export function tickDecimals(ticks) {
+  const step = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
+  return [0, 1, 2].find((d) => Math.abs(step * 10 ** d - Math.round(step * 10 ** d)) < 1e-6) ?? 2;
 }
 
 /** Re-renders `draw(width)` whenever the container width changes. */
@@ -190,7 +198,7 @@ export function trendLine(container, { points, fit, decimals = 1, unit = '', eve
     const ticks = niceTicks(Math.min(...ys), Math.max(...ys), 3);
     const x = scale(xs[0], xs.at(-1), MARGIN.left, width - MARGIN.right);
     const y = scale(ticks[0], ticks.at(-1), height - MARGIN.bottom, 12);
-    yAxis(svg, ticks, y, width, decimals > 1 ? 2 : decimals === 1 && ticks.at(-1) < 10 ? 1 : 0);
+    yAxis(svg, ticks, y, width, tickDecimals(ticks));
     if (eventX != null && eventX >= xs[0] && eventX <= xs.at(-1)) {
       svg.append(el('line', { x1: x(eventX), x2: x(eventX), y1: 12, y2: height - MARGIN.bottom, class: 'event-line' }));
     }
@@ -248,6 +256,39 @@ export function strip(container, { values, event, decimals = 1, unit = '', heigh
     svg.append(el('circle', { cx: x(event.value), cy: mid, r: 7, class: 'strip-event' }));
     const anchor = x(event.value) > width * 0.8 ? 'end' : x(event.value) < width * 0.2 ? 'start' : 'middle';
     svg.append(el('text', { x: x(event.value), y: height - 2, 'text-anchor': anchor, class: 'strip-label' }, `${event.year}: ${formatNumber(event.value, decimals)} ${unit}`));
+    container.prepend(svg);
+  });
+}
+
+/** Daily bars against a reference threshold (e.g. PM2.5 vs the WHO 24-hour guideline). */
+export function dailyBars(container, { days, threshold, thresholdLabel, unit = '', decimals = 0, height = 150 }) {
+  responsive(container, (width) => {
+    const svg = el('svg', { width, height, role: 'img', class: 'chart' });
+    const max = Math.max(threshold * 1.2, ...days.map((d) => d.value));
+    const ticks = niceTicks(0, max, 3);
+    const y = scale(0, ticks.at(-1), height - MARGIN.bottom, 14);
+    const band = (width - MARGIN.left - MARGIN.right) / days.length;
+    const barW = Math.max(2, Math.min(MAX_BAR, band - GAP));
+    const cx = (k) => MARGIN.left + band * k + band / 2;
+    yAxis(svg, ticks, y, width);
+    days.forEach((d, k) => {
+      const h = y(0) - y(d.value);
+      svg.append(el('path', { d: barPath(cx(k) - barW / 2, y(d.value), barW, Math.max(h, 0.5), true), class: d.value > threshold ? 'bar-over' : 'bar-under' }));
+    });
+    svg.append(el('line', { x1: MARGIN.left, x2: width - MARGIN.right, y1: y(threshold), y2: y(threshold), class: 'threshold-line' }));
+    svg.append(el('text', { x: width - MARGIN.right, y: y(threshold) - 5, 'text-anchor': 'end', class: 'threshold-label' }, thresholdLabel));
+    svg.append(el('line', { x1: MARGIN.left, x2: width - MARGIN.right, y1: y(0), y2: y(0), class: 'baseline' }));
+    const step = Math.max(1, Math.ceil(days.length / Math.max(2, Math.floor(width / 70))));
+    days.forEach((d, k) => {
+      if (k % step === 0) svg.append(el('text', { x: cx(k), y: height - 6, 'text-anchor': 'middle', class: 'tick' }, d.date.slice(5)));
+    });
+    const tip = tooltip(container);
+    days.forEach((d, k) => {
+      const hit = el('rect', { x: cx(k) - band / 2, y: 0, width: band, height: height - MARGIN.bottom, class: 'hit' });
+      hit.addEventListener('pointerenter', () => tip.show([[d.date, `${formatNumber(d.value, decimals)} ${unit}`]], cx(k), y(d.value)));
+      hit.addEventListener('pointerleave', () => tip.hide());
+      svg.append(hit);
+    });
     container.prepend(svg);
   });
 }

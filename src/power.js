@@ -39,6 +39,9 @@ export const PARAMETERS = Object.freeze({
   },
 });
 
+// Extra inputs for the heat index (specific humidity g/kg, surface pressure kPa).
+export const FETCH_PARAMETERS = Object.freeze([...Object.keys(PARAMETERS), 'QV2M', 'PS']);
+
 const isValid = (v) => typeof v === 'number' && Number.isFinite(v);
 const compact = (iso) => iso.replaceAll('-', '');
 const toIso = (yyyymmdd) => `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`;
@@ -47,7 +50,7 @@ const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 
 export const dayBefore = (iso) => addDays(iso, -1);
 
-export function buildPowerUrl({ lat, lon, start, end, parameters = Object.keys(PARAMETERS) }) {
+export function buildPowerUrl({ lat, lon, start, end, parameters = FETCH_PARAMETERS }) {
   if (!isValid(lat) || lat < -90 || lat > 90) throw new RangeError(`Latitud inválida: ${lat}`);
   if (!isValid(lon) || lon < -180 || lon > 180) throw new RangeError(`Longitud inválida: ${lon}`);
   const params = new URLSearchParams({

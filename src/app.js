@@ -3,7 +3,8 @@
 import { loadSummary, loadEvents } from './eonet.js';
 import { catalogBreakYears } from './audit.js';
 import { renderAudit, sourcePalette, categoryLabel } from './audit-view.js';
-import { createMap, renderCase, geocode } from './measure-view.js';
+import { createMap, geocode } from './measure-view.js';
+import { renderCase } from './case-view.js';
 import { formatNumber } from './narrative.js';
 
 const DEFAULT_CATEGORY = 'wildfires';
@@ -11,6 +12,7 @@ const MAP_DEFAULT_CATEGORY = 'wildfires';
 const MAP_DEFAULT_YEAR = 2024;
 // Categories with too few events to be worth a chip of their own are still listed, just last.
 const MIN_EVENTS_FOR_PROMINENCE = 100;
+const CLICK_DEBOUNCE_MS = 300;
 
 const dom = Object.fromEntries(
   [...document.querySelectorAll('[data-bind]')].map((n) => [n.dataset.bind, n]),
@@ -63,13 +65,18 @@ function fillSelect(select, options, selected) {
 async function openCase(target, summary, mapApi) {
   caseController?.abort();
   caseController = new AbortController();
+  const { signal } = caseController;
   if (target.kind === 'place') mapApi.showPlace(target.lat, target.lon);
+  // Debounce: a burst of clicks only queries the public APIs for the last one.
+  await new Promise((resolve) => setTimeout(resolve, CLICK_DEBOUNCE_MS));
+  if (signal.aborted) return;
   const categoryId = target.kind === 'event' ? target.event.c[0] : null;
   try {
     await renderCase(dom.case, target, {
       categoryName: categoryId ? categoryLabel(categoryId, summary) : '',
       sources: summary.sources,
-      signal: caseController.signal,
+      signal,
+      lastCompleteYear: summary.lastCompleteYear,
     });
   } catch (err) {
     if (err.name !== 'AbortError') {
