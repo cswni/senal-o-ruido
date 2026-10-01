@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Señal o Ruido</title>
+    <meta name="description" content="Detector de tendencias del sistema Tierra que audita sus propios sesgos. NASA EONET + NASA POWER." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+      integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <p class="kicker">NASA Space Apps 2026 · Be an Earth System Trend Detective</p>
+      <h1>Señal <em>o</em> Ruido</h1>
+      <p class="thesis">
+        Antes de creerle a una tendencia, pregúntale de dónde vienen los datos.
+        Este detector separa lo que cambió en el planeta de lo que cambió en el catálogo
+        y mide lo que pasa en cualquier lugar con 45 años de observaciones de la NASA.
+      </p>
+    </header>
+
+    <main>
+      <section class="chapter" aria-labelledby="trial-heading">
+        <div class="chapter-head">
+          <span class="chapter-num">01</span>
+          <div>
+            <h2 id="trial-heading">El juicio de la tendencia</h2>
+            <p class="chapter-sub">
+              Catálogo NASA EONET, <span data-bind="range"></span>. Elige un fenómeno.
+            </p>
+          </div>
+        </div>
+
+        <div class="chips" role="radiogroup" aria-label="Fenómeno" data-bind="categories"></div>
+
+        <div class="trial">
+          <article class="claim">
+            <p class="claim-label">Lo que diría un dashboard ingenuo</p>
+            <p class="claim-text" data-bind="naive"></p>
+          </article>
+          <article class="verdict" data-bind="verdict-card" aria-live="polite">
+            <p class="claim-label">Veredicto del auditor</p>
+            <p class="stamp" data-bind="stamp"></p>
+            <p class="verdict-lead" data-bind="verdict-lead"></p>
+          </article>
+        </div>
+
+        <figure class="figure">
+          <figcaption>
+            <span class="fig-title">Eventos por año, coloreados por la fuente que los reporta</span>
+            <span class="fig-note">Números = cambios del catálogo · zona sombreada = tramo comparable</span>
+          </figcaption>
+          <div class="legend" data-bind="legend"></div>
+          <div class="chart-box" data-bind="bars"></div>
+          <details class="table-view">
+            <summary>Ver los datos como tabla</summary>
+            <div data-bind="table"></div>
+          </details>
+        </figure>
+
+        <div class="dossier-grid">
+          <div>
+            <h3 class="mini-head">Expediente del catálogo</h3>
+            <ol class="breaks" data-bind="breaks"></ol>
+          </div>
+          <div>
+            <h3 class="mini-head">Conclusión</h3>
+            <p class="conclusion" data-bind="conclusion"></p>
+            <p class="stat-line" data-bind="new-share"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="chapter" aria-labelledby="measure-heading">
+        <div class="chapter-head">
+          <span class="chapter-num">02</span>
+          <div>
+            <h2 id="measure-heading">Del evento a la medición</h2>
+            <p class="chapter-sub">
+              Elige un evento o busca tu lugar. Comparamos lo ocurrido con 45 años de NASA POWER
+              (temperatura, lluvia y humedad del suelo) en ese mismo punto.
+            </p>
+          </div>
+        </div>
+
+        <div class="controls">
+          <label class="field">
+            <span>Fenómeno</span>
+            <select data-bind="map-category"></select>
+          </label>
+          <label class="field">
+            <span>Año</span>
+            <select data-bind="map-year"></select>
+          </label>
+          <form class="field search" data-bind="place-form" role="search">
+            <span>Mi lugar</span>
+            <div class="search-row">
+              <input type="search" name="q" placeholder="Ciudad o región…" autocomplete="off" maxlength="80" />
+              <button type="submit">Buscar</button>
+            </div>
+            <ul class="place-results" data-bind="place-results"></ul>
+          </form>
+        </div>
+
+        <div class="measure">
+          <div class="map-wrap">
+            <div id="map" aria-label="Mapa de eventos"></div>
+            <p class="map-status" data-bind="map-status" aria-live="polite"></p>
+          </div>
+          <aside class="case" data-bind="case" aria-live="polite">
+            <p class="case-empty">
+              Toca un punto del mapa para abrir su expediente. También puedes hacer clic en cualquier
+              lugar del mapa o buscar tu ciudad.
+            </p>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <p>
+        Datos: <a href="https://eonet.gsfc.nasa.gov/" rel="noopener">NASA EONET v3</a> (eventos),
+        <a href="https://power.larc.nasa.gov/" rel="noopener">NASA POWER</a> (mediciones diarias desde 1981),
+        <a href="https://earthdata.nasa.gov/gibs" rel="noopener">NASA GIBS</a> (mapa base).
+        Estadística: Mann-Kendall, pendiente de Theil-Sen y prueba de Pettitt.
+      </p>
+      <p data-bind="snapshot"></p>
+    </footer>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+      integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+      crossorigin="anonymous"
+    ></script>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>

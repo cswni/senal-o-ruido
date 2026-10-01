@@ -1,0 +1,13 @@
+{
+  "name": "senal-o-ruido",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Detector de tendencias del sistema Tierra que audita sus propios sesgos (NASA EONET + NASA POWER).",
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage \"tests/*.test.js\"",
+    "snapshot": "node scripts/build-snapshot.mjs 2000",
+    "serve": "python -m http.server 5173"
+  }
+}
